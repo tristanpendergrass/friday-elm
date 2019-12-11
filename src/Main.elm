@@ -100,12 +100,23 @@ type alias PirateCard =
 
 
 type Game
-    = NotStartedGame
-    | Game GameState
-    | FinishedGame GameFinishedState
+    = NotStartedGame NotStartedGameState Difficulty
+    | Game InProgressGameState Difficulty
+    | FinishedGame FinishedGameState Difficulty
 
 
-type alias GameState =
+type Difficulty
+    = Level1
+    | Level2
+    | Level3
+    | Level4
+
+
+type alias NotStartedGameState =
+    { options : Maybe BossSelectionOptions }
+
+
+type alias InProgressGameState =
     { phase : Phase
     , lifePoints : Int
     , deck : List FightingCard
@@ -114,14 +125,9 @@ type alias GameState =
 
 
 type Phase
-    = BossSelectionPhase BossSelectionState
-    | HazardSelectionPhase HazardSelectionState
+    = HazardSelectionPhase HazardSelectionState
     | EncounterPhase EncounterState
     | ResolutionPhase ResolutionState
-
-
-type alias BossSelectionState =
-    { options : Maybe BossSelectionOptions }
 
 
 type alias BossSelectionOptions =
@@ -176,7 +182,7 @@ type GameOutcome
     | Lose
 
 
-type alias GameFinishedState =
+type alias FinishedGameState =
     { outcome : GameOutcome
     }
 
@@ -192,12 +198,15 @@ init _ =
     let
         initialGame : Game
         initialGame =
-            Game
-                { phase = BossSelectionPhase { options = Nothing }
-                , lifePoints = 20
-                , deck = []
-                , discard = []
+            NotStartedGame
+                { options =
+                    Just
+                        { left = { name = "pirate 1" }
+                        , right = { name = "pirate 2" }
+                        , selection = LeftBoss
+                        }
                 }
+                Level1
     in
     ( { currentGame = Nothing, games = [] }, Cmd.none )
 
@@ -206,8 +215,27 @@ init _ =
 -- UPDATE
 
 
+{-|
+
+    = BossSelectionPhase BossSelectionState
+    | HazardSelectionPhase HazardSelectionState
+    | EncounterPhase EncounterState
+    | ResolutionPhase ResolutionState
+
+-}
 type Msg
     = NoOp
+      -- Not in a game
+    | CreateGame Difficulty
+    | SetCurrentGame (Maybe Game)
+    | DeleteGame Game
+      -- BossSelectionPhase
+    | SetBossSelection BossSelection
+    | ConfirmBossSelection
+
+
+
+-- HazardSelectionPhase
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
