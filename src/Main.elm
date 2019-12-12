@@ -17,9 +17,6 @@ type alias Id =
     Int
 
 
-{-| All Hazard cards have a hazard half and a player half. The player half is used if the card is in the player's deck
-and hazard half if it's in the hazard deck
--}
 type FightingCard
     = RobinsonCard RobinsonCardStats
     | HazardCard HazardCardStats
@@ -52,7 +49,8 @@ type SpecialAbility
     | BelowTheStack
 
 
-{-| Cards that start out in the hazard deck and if defeated become part of the player's deck
+{-| All Hazard cards have a hazard half and a player half. The player half is used if the card is in the player's deck
+and hazard half if it's in the hazard deck
 -}
 type alias HazardCardStats =
     { id : Id
@@ -95,10 +93,31 @@ type AgingSeverity
 
 
 type alias PirateCard =
-    { name : String
+    { id : Id
+    , numberOfFreeCards : Int
+    , hazardValue : PirateHazardValue
+    , specialAbility : PirateSpecialAbility
     }
 
 
+{-| Most simply have a Number. If it's Special then show an asterisk and calculate how to beat it by referencing the special ability.
+-}
+type PirateHazardValue
+    = Number Int
+    | Special
+
+
+type PirateSpecialAbility
+    = NoPirateAbility
+    | EachAdditionalCardCostsTwo
+    | OnlyHalf
+    | AllFightingCardsPlusOne
+    | FightAllRemainingHazards
+    | AddTwoPerAgingCard
+
+
+{-| We model it where if you haven't picked a pirate to fight as the final boss yet then the game is a NotStartedGame, and becomes a FinishedGame when you die or win.
+-}
 type Game
     = NotStartedGame NotStartedGameState Difficulty
     | Game InProgressGameState Difficulty
@@ -113,7 +132,7 @@ type Difficulty
 
 
 type alias NotStartedGameState =
-    { options : Maybe BossSelectionOptions }
+    { options : PirateSelectionOptions }
 
 
 type alias InProgressGameState =
@@ -130,16 +149,17 @@ type Phase
     | ResolutionPhase ResolutionState
 
 
-type alias BossSelectionOptions =
+type alias PirateSelectionOptions =
     { left : PirateCard
     , right : PirateCard
-    , selection : BossSelection
+    , selection : Maybe PirateSelection
     }
 
 
-type BossSelection
-    = LeftBoss
-    | RightBoss
+type PirateSelection
+    = NoPirateSelection
+    | LeftPirate
+    | RightPirate
 
 
 {-| Options is a Maybe because at the start of the phase there are no options given
@@ -187,28 +207,24 @@ type alias FinishedGameState =
     }
 
 
-type alias Model =
-    { currentGame : Maybe Game
+type Model
+    = MainMenu MainMenuState
+    | InGame InGameState
+
+
+type alias MainMenuState =
+    { games : List Game, mostRecentGame : Maybe Game }
+
+
+type alias InGameState =
+    { currentGame : Game
     , games : List Game
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    let
-        initialGame : Game
-        initialGame =
-            NotStartedGame
-                { options =
-                    Just
-                        { left = { name = "pirate 1" }
-                        , right = { name = "pirate 2" }
-                        , selection = LeftBoss
-                        }
-                }
-                Level1
-    in
-    ( { currentGame = Nothing, games = [] }, Cmd.none )
+    ( MainMenu { games = [], mostRecentGame = Nothing }, Cmd.none )
 
 
 
@@ -230,7 +246,7 @@ type Msg
     | SetCurrentGame (Maybe Game)
     | DeleteGame Game
       -- BossSelectionPhase
-    | SetBossSelection BossSelection
+    | SetBossSelection PirateSelection
     | ConfirmBossSelection
 
 
