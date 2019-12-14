@@ -2,11 +2,37 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, div, text)
+import Random
 
 
 main : Program () Model Msg
 main =
     Browser.element { init = init, update = update, view = view, subscriptions = subscriptions }
+
+
+
+-- FIXTURES
+
+
+{-| Default left and right pirate only needed because the random generator requires a backup if a list is empty
+-}
+defaultLeftPirate : PirateCard
+defaultLeftPirate =
+    { id = 103, numberOfFreeCards = StandardPirateFreeCards 9, hazardValue = StandardPirateHazardValue 22, specialAbility = OnlyHalf }
+
+
+defaultRightPirate : PirateCard
+defaultRightPirate =
+    { id = 104, numberOfFreeCards = SpecialPirateFreeCards, hazardValue = SpecialPirateHazardValue, specialAbility = FightAllRemainingHazards }
+
+
+pirateCards : List PirateCard
+pirateCards =
+    [ defaultLeftPirate
+    , defaultRightPirate
+    , { id = 101, numberOfFreeCards = StandardPirateFreeCards 9, hazardValue = StandardPirateHazardValue 35, specialAbility = NoPirateAbility }
+    , { id = 102, numberOfFreeCards = StandardPirateFreeCards 7, hazardValue = StandardPirateHazardValue 16, specialAbility = EachAdditionalCardCostsTwo }
+    ]
 
 
 
@@ -94,17 +120,22 @@ type AgingSeverity
 
 type alias PirateCard =
     { id : Id
-    , numberOfFreeCards : Int
+    , numberOfFreeCards : PirateFreeCards
     , hazardValue : PirateHazardValue
     , specialAbility : PirateSpecialAbility
     }
 
 
+type PirateFreeCards
+    = StandardPirateFreeCards Int
+    | SpecialPirateFreeCards
+
+
 {-| Most simply have a Number. If it's Special then show an asterisk and calculate how to beat it by referencing the special ability.
 -}
 type PirateHazardValue
-    = Number Int
-    | Special
+    = StandardPirateHazardValue Int
+    | SpecialPirateHazardValue
 
 
 type PirateSpecialAbility
@@ -152,7 +183,7 @@ type Phase
 type alias PirateSelectionOptions =
     { left : PirateCard
     , right : PirateCard
-    , selection : Maybe PirateSelection
+    , selection : PirateSelection
     }
 
 
@@ -213,18 +244,22 @@ type Model
 
 
 type alias MainMenuState =
-    { games : List Game, mostRecentGame : Maybe Game }
+    { games : List Game
+    , mostRecentGame : Maybe Game
+    , seed : Random.Seed
+    }
 
 
 type alias InGameState =
     { currentGame : Game
     , games : List Game
+    , seed : Random.Seed
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( MainMenu { games = [], mostRecentGame = Nothing }, Cmd.none )
+    ( MainMenu { games = [], mostRecentGame = Nothing, seed = Random.initialSeed 0 }, Cmd.none )
 
 
 
@@ -254,10 +289,45 @@ type Msg
 -- HazardSelectionPhase
 
 
+twoRandomPirates : Random.Seed -> ( Random.Seed, ( PirateCard, PirateCard ) )
+twoRandomPirates seed =
+    let
+        ( left, seedAfterLeft ) =
+            case pirateCards of
+                [] ->
+                    ( defaultLeftPirate, seed )
+
+                first :: rest ->
+                    Random.step (Random.uniform first rest) seed
+
+        ( right, seedAfterRight ) =
+            case List.filter ((==) left) pirateCards of
+                [] ->
+                    ( defaultRightPirate, seedAfterLeft )
+
+                first :: rest ->
+                    Random.step (Random.uniform first rest) seedAfterLeft
+    in
+    ( seedAfterRight, ( left, right ) )
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        NoOp ->
+    case ( model, msg ) of
+        ( _, NoOp ) ->
+            ( model, Cmd.none )
+
+        ( MainMenu mainMenuState, CreateGame difficulty ) ->
+            let
+                ( newSeed, ( left, right ) ) =
+                    twoRandomPirates mainMenuState.seed
+
+                newGame =
+                    NotStartedGame { options = { left = left, right = right, selection = NoPirateSelection } } difficulty
+            in
+            ( InGame { currentGame = newGame, games = newGame :: mainMenuState.games, seed = newSeed }, Cmd.none )
+
+        _ ->
             ( model, Cmd.none )
 
 
