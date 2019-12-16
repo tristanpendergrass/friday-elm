@@ -14,8 +14,6 @@ main =
 -- FIXTURES
 
 
-{-| Default left and right pirate only needed because the random generator requires a backup if a list is empty
--}
 defaultLeftPirate : PirateCard
 defaultLeftPirate =
     { id = 103, numberOfFreeCards = StandardPirateFreeCards 9, hazardValue = StandardPirateHazardValue 22, specialAbility = OnlyHalf }
@@ -33,6 +31,58 @@ pirateCards =
     , { id = 101, numberOfFreeCards = StandardPirateFreeCards 9, hazardValue = StandardPirateHazardValue 35, specialAbility = NoPirateAbility }
     , { id = 102, numberOfFreeCards = StandardPirateFreeCards 7, hazardValue = StandardPirateHazardValue 16, specialAbility = EachAdditionalCardCostsTwo }
     ]
+
+
+firstRobinsonCard : FightingCard
+firstRobinsonCard =
+    RobinsonCard { id = 201, title = "weak", fightingValue = 0, specialAbility = NoAbility }
+
+
+secondRobinsonCard : FightingCard
+secondRobinsonCard =
+    RobinsonCard { id = 202, title = "distracted", fightingValue = -1, specialAbility = NoAbility }
+
+
+robinsonCards : List FightingCard
+robinsonCards =
+    [ firstRobinsonCard
+    , secondRobinsonCard
+    , RobinsonCard { id = 203, title = "weak", fightingValue = 0, specialAbility = NoAbility }
+    , RobinsonCard { id = 204, title = "distracted", fightingValue = -1, specialAbility = NoAbility }
+    ]
+
+
+firstHazardCard : FightingCard
+firstHazardCard =
+    HazardCard
+        { id = 301
+        , hazardTitle = "With the raft to the wreck"
+        , numberOfFreeCards = 1
+        , redPhaseHazardValue = 3
+        , yellowPhaseHazardValue = 1
+        , greenPhaseHazardValue = 0
+        , robinsonTitle = "food"
+        , fightingValue = 0
+        , specialAbility = HealOne
+        }
+
+
+secondHazardCard : FightingCard
+secondHazardCard =
+    HazardCard
+        { id = 302
+        , hazardTitle = "With the raft to the wreck"
+        , numberOfFreeCards = 1
+        , redPhaseHazardValue = 3
+        , yellowPhaseHazardValue = 1
+        , greenPhaseHazardValue = 0
+        , robinsonTitle = "food"
+        , fightingValue = 0
+        , specialAbility = HealOne
+        }
+
+
+hazardCards : List HazardCard
 
 
 
