@@ -71,18 +71,22 @@ secondHazardCard : FightingCard
 secondHazardCard =
     HazardCard
         { id = 302
-        , hazardTitle = "With the raft to the wreck"
-        , numberOfFreeCards = 1
-        , redPhaseHazardValue = 3
-        , yellowPhaseHazardValue = 1
-        , greenPhaseHazardValue = 0
+        , hazardTitle = "Exploring the island"
+        , numberOfFreeCards = 2
+        , redPhaseHazardValue = 6
+        , yellowPhaseHazardValue = 3
+        , greenPhaseHazardValue = 1
         , robinsonTitle = "food"
         , fightingValue = 0
         , specialAbility = HealOne
         }
 
 
-hazardCards : List HazardCard
+hazardCards : List FightingCard
+hazardCards =
+    [ firstHazardCard
+    , secondHazardCard
+    ]
 
 
 
