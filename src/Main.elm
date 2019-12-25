@@ -1,7 +1,8 @@
 module Main exposing (main)
 
 import Browser
-import Html exposing (Html, div, text)
+import Html exposing (Html, button, div, text)
+import Html.Events exposing (onClick)
 import Random
 
 
@@ -293,27 +294,26 @@ type alias FinishedGameState =
 
 
 type Model
-    = MainMenu MainMenuState
-    | InGame InGameState
+    = MainMenu MetagameState MainMenuState
+    | InGame MetagameState Game
 
 
-type alias MainMenuState =
+{-| Gamestate that should be kept no matter if we're in the Main Menu or in a game or what.
+-}
+type alias MetagameState =
     { games : List Game
     , mostRecentGame : Maybe Game
     , seed : Random.Seed
     }
 
 
-type alias InGameState =
-    { currentGame : Game
-    , games : List Game
-    , seed : Random.Seed
-    }
+type alias MainMenuState =
+    {}
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( MainMenu { games = [], mostRecentGame = Nothing, seed = Random.initialSeed 0 }, Cmd.none )
+    ( MainMenu { games = [], mostRecentGame = Nothing, seed = Random.initialSeed 0 } {}, Cmd.none )
 
 
 
@@ -371,15 +371,15 @@ update msg model =
         ( _, NoOp ) ->
             ( model, Cmd.none )
 
-        ( MainMenu mainMenuState, CreateGame difficulty ) ->
+        ( MainMenu metagameState _, CreateGame difficulty ) ->
             let
                 ( newSeed, ( left, right ) ) =
-                    twoRandomPirates mainMenuState.seed
+                    twoRandomPirates metagameState.seed
 
                 newGame =
                     NotStartedGame { options = { left = left, right = right, selection = NoPirateSelection } } difficulty
             in
-            ( InGame { currentGame = newGame, games = newGame :: mainMenuState.games, seed = newSeed }, Cmd.none )
+            ( InGame { metagameState | seed = newSeed } newGame, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
@@ -400,4 +400,12 @@ subscriptions _ =
 
 view : Model -> Html Msg
 view model =
-    div [] [ text "Why hello there" ]
+    case model of
+        MainMenu mainMenuState _ ->
+            div []
+                [ button [ onClick (CreateGame Level1) ] [ text "Create Game" ]
+                ]
+
+        InGame _ _ ->
+            div []
+                [ text "In Game" ]
