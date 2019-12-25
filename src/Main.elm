@@ -1,8 +1,17 @@
 module Main exposing (main)
 
 import Browser
+import FightingCard exposing (FightingCard, HazardCardStats)
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
+import PirateCard
+    exposing
+        ( PirateCard
+        , firstPirateCard
+        , pirateCards
+        , secondPirateCard
+        , twoRandomPirates
+        )
 import Random
 
 
@@ -12,194 +21,7 @@ main =
 
 
 
--- FIXTURES
-
-
-defaultLeftPirate : PirateCard
-defaultLeftPirate =
-    { id = 103, numberOfFreeCards = StandardPirateFreeCards 9, hazardValue = StandardPirateHazardValue 22, specialAbility = OnlyHalf }
-
-
-defaultRightPirate : PirateCard
-defaultRightPirate =
-    { id = 104, numberOfFreeCards = SpecialPirateFreeCards, hazardValue = SpecialPirateHazardValue, specialAbility = FightAllRemainingHazards }
-
-
-pirateCards : List PirateCard
-pirateCards =
-    [ defaultLeftPirate
-    , defaultRightPirate
-    , { id = 101, numberOfFreeCards = StandardPirateFreeCards 9, hazardValue = StandardPirateHazardValue 35, specialAbility = NoPirateAbility }
-    , { id = 102, numberOfFreeCards = StandardPirateFreeCards 7, hazardValue = StandardPirateHazardValue 16, specialAbility = EachAdditionalCardCostsTwo }
-    ]
-
-
-firstRobinsonCard : FightingCard
-firstRobinsonCard =
-    RobinsonCard { id = 201, title = "weak", fightingValue = 0, specialAbility = NoAbility }
-
-
-secondRobinsonCard : FightingCard
-secondRobinsonCard =
-    RobinsonCard { id = 202, title = "distracted", fightingValue = -1, specialAbility = NoAbility }
-
-
-robinsonCards : List FightingCard
-robinsonCards =
-    [ firstRobinsonCard
-    , secondRobinsonCard
-    , RobinsonCard { id = 203, title = "weak", fightingValue = 0, specialAbility = NoAbility }
-    , RobinsonCard { id = 204, title = "distracted", fightingValue = -1, specialAbility = NoAbility }
-    ]
-
-
-firstHazardCard : FightingCard
-firstHazardCard =
-    HazardCard
-        { id = 301
-        , hazardTitle = "With the raft to the wreck"
-        , numberOfFreeCards = 1
-        , redPhaseHazardValue = 3
-        , yellowPhaseHazardValue = 1
-        , greenPhaseHazardValue = 0
-        , robinsonTitle = "food"
-        , fightingValue = 0
-        , specialAbility = HealOne
-        }
-
-
-secondHazardCard : FightingCard
-secondHazardCard =
-    HazardCard
-        { id = 302
-        , hazardTitle = "Exploring the island"
-        , numberOfFreeCards = 2
-        , redPhaseHazardValue = 6
-        , yellowPhaseHazardValue = 3
-        , greenPhaseHazardValue = 1
-        , robinsonTitle = "food"
-        , fightingValue = 0
-        , specialAbility = HealOne
-        }
-
-
-hazardCards : List FightingCard
-hazardCards =
-    [ firstHazardCard
-    , secondHazardCard
-    ]
-
-
-
 -- MODEL
-
-
-type alias Id =
-    Int
-
-
-type FightingCard
-    = RobinsonCard RobinsonCardStats
-    | HazardCard HazardCardStats
-    | AgingCard AgingCardStats
-
-
-{-| Cards that start out in the player's deck
--}
-type alias RobinsonCardStats =
-    { id : Id
-    , title : String
-    , fightingValue : Int
-    , specialAbility : SpecialAbility
-    }
-
-
-type SpecialAbility
-    = NoAbility
-    | HealOne
-    | HealTwo
-    | DrawOne
-    | DrawTwo
-    | Destroy
-    | Double
-    | Copy
-    | PhaseMinusOne
-    | SortThreeCards
-    | ExchangeOne
-    | ExchangeTwo
-    | BelowTheStack
-
-
-{-| All Hazard cards have a hazard half and a player half. The player half is used if the card is in the player's deck
-and hazard half if it's in the hazard deck
--}
-type alias HazardCardStats =
-    { id : Id
-    , hazardTitle : String
-    , numberOfFreeCards : Int
-    , redPhaseHazardValue : Int
-    , yellowPhaseHazardValue : Int
-    , greenPhaseHazardValue : Int
-    , robinsonTitle : String
-    , fightingValue : Int
-    , specialAbility : SpecialAbility
-    }
-
-
-type alias AgingCardStats =
-    { id : Id
-    , title : String
-    , fightingValue : Int
-    , specialAbility : AgingSpecialAbility
-    , lifeCost : AgingLifeCost
-    , agingSeverity : AgingSeverity
-    }
-
-
-type AgingSpecialAbility
-    = LoseOne
-    | LoseTwo
-    | HighestCardZero
-    | Stop
-
-
-type AgingLifeCost
-    = One
-    | Two
-
-
-type AgingSeverity
-    = Normal
-    | Difficult
-
-
-type alias PirateCard =
-    { id : Id
-    , numberOfFreeCards : PirateFreeCards
-    , hazardValue : PirateHazardValue
-    , specialAbility : PirateSpecialAbility
-    }
-
-
-type PirateFreeCards
-    = StandardPirateFreeCards Int
-    | SpecialPirateFreeCards
-
-
-{-| Most simply have a Number. If it's Special then show an asterisk and calculate how to beat it by referencing the special ability.
--}
-type PirateHazardValue
-    = StandardPirateHazardValue Int
-    | SpecialPirateHazardValue
-
-
-type PirateSpecialAbility
-    = NoPirateAbility
-    | EachAdditionalCardCostsTwo
-    | OnlyHalf
-    | AllFightingCardsPlusOne
-    | FightAllRemainingHazards
-    | AddTwoPerAgingCard
 
 
 {-| We model it where if you haven't picked a pirate to fight as the final boss yet then the game is a NotStartedGame, and becomes a FinishedGame when you die or win.
@@ -341,28 +163,6 @@ type Msg
 
 
 -- HazardSelectionPhase
-
-
-twoRandomPirates : Random.Seed -> ( Random.Seed, ( PirateCard, PirateCard ) )
-twoRandomPirates seed =
-    let
-        ( left, seedAfterLeft ) =
-            case pirateCards of
-                [] ->
-                    ( defaultLeftPirate, seed )
-
-                first :: rest ->
-                    Random.step (Random.uniform first rest) seed
-
-        ( right, seedAfterRight ) =
-            case List.filter ((==) left) pirateCards of
-                [] ->
-                    ( defaultRightPirate, seedAfterLeft )
-
-                first :: rest ->
-                    Random.step (Random.uniform first rest) seedAfterLeft
-    in
-    ( seedAfterRight, ( left, right ) )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
