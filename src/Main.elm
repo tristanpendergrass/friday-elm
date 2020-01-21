@@ -152,7 +152,7 @@ init _ =
 -}
 type Msg
     = NoOp
-      -- Not in a game
+      -- Main Menu
     | CreateGame Difficulty
     | SetCurrentGame (Maybe Game)
     | DeleteGame Game
@@ -171,6 +171,7 @@ update msg model =
         ( _, NoOp ) ->
             ( model, Cmd.none )
 
+        -- Main Menu updates
         ( MainMenu metagameState _, CreateGame difficulty ) ->
             let
                 ( newSeed, ( left, right ) ) =
@@ -181,7 +182,14 @@ update msg model =
             in
             ( InGame { metagameState | seed = newSeed } newGame, Cmd.none )
 
-        _ ->
+        ( MainMenu metagameState mainMenuState, SetCurrentGame game ) ->
+            ( MainMenu { metagameState | mostRecentGame = game } mainMenuState, Cmd.none )
+
+        ( MainMenu _ _, _ ) ->
+            ( model, Cmd.none )
+
+        -- In Game updates
+        ( InGame _ _, _ ) ->
             ( model, Cmd.none )
 
 
